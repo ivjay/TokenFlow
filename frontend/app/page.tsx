@@ -31,6 +31,7 @@ export default function LandingPage() {
 
         if(accounts.length > 0) {
           setConnected(true);
+          localStorage.setItem("walletConnected", "true");
           router.push("/dashboard");
         }
     } catch (err) {
