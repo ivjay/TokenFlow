@@ -21,12 +21,14 @@ async function main() {
   console.log("PaymentReceipt deployed to:", paymentReceiptAddress);
 
   // Deploy PaymentGateway
+  const uniswapRouterAddress= '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D';
   const PaymentGateway = await ethers.getContractFactory("PaymentGateway");
   const paymentGateway = await PaymentGateway.deploy(
     paymentTokenAddress,
+    uniswapRouterAddress,
     paymentReceiptAddress,
     deployer.address, // Fee address
-    200 // 2% fee (200 basis points)
+    100 // 1% fee (100 basis points)
   );
   await paymentGateway.waitForDeployment();
   const paymentGatewayAddress = await paymentGateway.getAddress();
