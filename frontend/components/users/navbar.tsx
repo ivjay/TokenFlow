@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link";
 import React from "react";
 import { Button } from "../ui/button";
@@ -19,8 +21,8 @@ export default function Navbar() {
           <Link href="/dashboard/nft_Receipt" className=" font-semibold hover:text-blue-700">
             Receipt
           </Link>
-          <Link href="/dashboard/wallet" className="font-semibold hover:text-blue-700">
-            Wallet
+          <Link href="/dashboard/swap" className="font-semibold hover:text-blue-700">
+            Swap
           </Link>
         </div>
         <div className="flex items-center gap-2">

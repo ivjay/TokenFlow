@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Web3Provider } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { Wallet, CreditCard, ShoppingBag, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -19,32 +20,43 @@ export default function LandingPage() {
   const [error, setError] = useState<string | boolean>(false);
   const router = useRouter();
 
-  const handleConnect = async() => {
-    if(typeof window.ethereum === "undefined") {
+  const handleConnect = async () => {
+    if (!window.ethereum) {
       setError("MetaMask is not installed.");
       return;
     }
 
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts",[]);
+      const provider = new Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const account = await signer.getAddress();
 
-        if(accounts.length > 0) {
-          setConnected(true);
-          router.push("/dashboard");
-        }
+      if (account) {
+        setConnected(true);
+        localStorage.setItem("walletConnected", "true");
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError("Connection failed. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="w-full">
+      <div className="absolute inset-0 grid grid-cols-6 grid-rows-4 gap-2 opacity-10 z-0 pointer-events-none">
+        {Array.from({ length: 25 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-gray-700 dark:bg-gray-300 rounded-lg h-full w-full"
+          ></div>
+        ))}
+      </div>
       {/* Hero Section - Full Page */}
-      <div className="h-screen flex items-center justify-center px-10 text-center">
+      <div className="h-screen flex items-center justify-center px-10 text-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white transition-all duration-500">
         <div className="max-w-2xl">
           <h1 className="text-5xl font-bold mb-6">Welcome to TokenFlow</h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-sm text-gray-300 mb-8">
             A Decentralized Payment Gateway with NFT-powered Receipts is
             transforming the way transactions are conducted. By leveraging
             blockchain technology, it ensures secure, transparent, and
@@ -53,7 +65,13 @@ export default function LandingPage() {
             in the digital payment ecosystem.
           </p>
           <div className="space-x-4">
-            <Button variant="outline" onClick={handleConnect} className="px-6 py-3 text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">{connected ? "Connected" : "Connect Wallet"}</Button>
+            <button
+              // variant="outline"
+              onClick={handleConnect}
+              className="px-6 py-3 text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 z-10"
+            >
+              {connected ? "Connected" : "Connect Wallet"}
+            </button>
           </div>
         </div>
       </div>
@@ -81,13 +99,11 @@ export default function LandingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CreditCard className="mr-2 h-5 w-5" />
-                  Get SitaCoin
+                  Get Coin
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p>
-                  Your ETH is converted to SitaCoin tokens at the current rate.
-                </p>
+                <p>Your ETH is converted to Coin tokens at the current rate.</p>
               </CardContent>
             </Card>
             <Card>
@@ -98,11 +114,14 @@ export default function LandingPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p>
-                  Use your SitaCoin tokens to buy products in our marketplace.
-                </p>
+                <p>Use your Coin tokens to buy products in our marketplace.</p>
               </CardContent>
             </Card>
+          </div>
+          <div className="flex p-4 justify-end">
+            <Button variant="outline" className="">
+              know more
+            </Button>
           </div>
         </div>
 
@@ -114,16 +133,17 @@ export default function LandingPage() {
           <div className="flex justify-center">
             <Card>
               <CardHeader>
-                <CardTitle>Current SitaCoin Value</CardTitle>
+                <CardTitle>Current Coin Value</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold">1 STC = $0.15 USD</p>
+                <p className="text-4xl font-bold pb-2">1 TC = $0.15 USD</p>
+                <p className="text-4xl font-bold ">1 TC = 0.01 ETH</p>
               </CardContent>
-              <CardFooter>
+              {/* <CardFooter>
                 <p className="text-sm text-gray-500">
                   Last updated: 2 minutes ago
                 </p>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           </div>
         </div>
