@@ -21,6 +21,9 @@ export default function Navbar() {
           <Link href="/dashboard/nft_Receipt" className=" font-semibold hover:text-blue-700">
             Receipt
           </Link>
+          <Link href="/dashboard/exchangeRate" className=" font-semibold hover:text-blue-700">
+            ExchangeRate
+          </Link>
           <Link href="/dashboard/swap" className="font-semibold hover:text-blue-700">
             Swap
           </Link>
