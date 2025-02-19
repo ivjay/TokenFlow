@@ -5,7 +5,7 @@ import { WalletContext } from "@/context/WalletProvider";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Wallet, CreditCard, ShoppingBag, ArrowRight, Link } from "lucide-react";
+import { Wallet, CreditCard, ShoppingBag, ArrowRight, Link, Coins, Receipt, ShoppingCart } from "lucide-react";
 
 export default function LandingPage() {
   const { connected, connectWallet } = useContext(WalletContext);
@@ -50,7 +50,7 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-
+      
       {/* Page Content (How It Works + Token Value + Featured Products) */}
       <div className="py-16 bg-gray-100 dark:bg-gray-800">
         {/* How It Works Section */}
@@ -124,7 +124,7 @@ export default function LandingPage() {
         </div>
 
         {/* Featured Products Section */}
-        <div className="py-16">
+        {/* <div className="py-16">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8">
             Featured Products
           </h2>
@@ -152,7 +152,7 @@ export default function LandingPage() {
               </Card>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* footer */}
@@ -172,5 +172,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-
