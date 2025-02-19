@@ -5,5 +5,6 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/dashboard/payments/page": "app/dashboard/payments/page.js",
   "/dashboard/transaction/page": "app/dashboard/transaction/page.js",
-  "/dashboard/swap/page": "app/dashboard/swap/page.js"
+  "/dashboard/swap/page": "app/dashboard/swap/page.js",
+  "/dashboard/rough/page": "app/dashboard/rough/page.js"
 }

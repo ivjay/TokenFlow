@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useContext, useEffect } from "react";
 import { ethers } from "ethers";
-import { Web3Provider } from "@ethersproject/providers";
+import { WalletContext } from "@/context/WalletProvider"; // Import WalletContext
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,13 +23,14 @@ import {
 } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 
-const NFT_RECEIPT_ABI = [
-  "function mintReceipt(address recipient, uint256 amount, string memory tokenSymbol) public returns (uint256)",
-];
-
-const NFT_RECEIPT_ADDRESS = "0x...";
+// Import contract data
+import contractAddresses from "@/contracts/contract-address.json";
+import PaymentGatewayABI from "@/contracts/PaymentGateway.json";
+import PaymentReceiptABI from "@/contracts/PaymentReceipt.json";
+import PaymentTokenABI from "@/contracts/PaymentToken.json";
 
 export default function Payment() {
+  const { connected, account } = useContext(WalletContext); // Use wallet context
   const [step, setStep] = useState(1);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -37,38 +38,95 @@ export default function Payment() {
   const [fee, setFee] = useState("0");
   const [receipt, setReceipt] = useState(null);
 
-  const [wallet, setWallet] = useState("");
-  const [balance, setBalance] = useState("0");
+  // Contract addresses from JSON
+  const PAYMENT_GATEWAY_ADDRESS = contractAddresses.PaymentGateway;
+  const PAYMENT_RECEIPT_ADDRESS = contractAddresses.PaymentReceipt;
+  const PAYMENT_TOKEN_ADDRESS = contractAddresses.PaymentToken;
 
-  useEffect(() => {
-    const checkWalletConnection = async () => {
-      if (window.ethereum) {
-        const provider = new Web3Provider(window.ethereum);
-        const accounts = await provider.listAccounts();
-        const userBalance = await provider.getBalance(accounts[0]);
+  const handlePayment = async () => {
+    if (!connected || !account) {
+      alert("Please connect your wallet first.");
+      return;
+    }
 
-        setWallet(accounts[0]);
-        setBalance(ethers.formatEther(userBalance.toString()));
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Contract instances
+      const paymentGateway = new ethers.Contract(
+        PAYMENT_GATEWAY_ADDRESS,
+        PaymentGatewayABI.abi,
+        signer
+      );
+      const paymentReceipt = new ethers.Contract(
+        PAYMENT_RECEIPT_ADDRESS,
+        PaymentReceiptABI.abi,
+        signer
+      );
+      const paymentToken = new ethers.Contract(
+        PAYMENT_TOKEN_ADDRESS,
+        PaymentTokenABI.abi,
+        signer
+      );
+
+      const amountInWei = ethers.parseUnits(amount, 18);
+
+      if (token !== "ETH") {
+        // Approve ERC-20 Token
+        const allowance = await paymentToken.allowance(
+          account,
+          PAYMENT_GATEWAY_ADDRESS
+        );
+        if (allowance < amountInWei) {
+          const approveTx = await paymentToken.approve(
+            PAYMENT_GATEWAY_ADDRESS,
+            amountInWei
+          );
+          await approveTx.wait();
+        }
       }
-    };
 
-    checkWalletConnection();
-  }, []);
+      // Call payment function (create payment)
+      const createTx = await paymentGateway.createPayment(
+        recipient,
+        amountInWei,
+        token === "ETH" ? ethers.ZeroAddress : PAYMENT_TOKEN_ADDRESS,
+        { value: token === "ETH" ? amountInWei : 0 }
+      );
+      const createReceipt = await createTx.wait(); // Wait for the transaction to be mined
+
+      console.log("Payment created:", createReceipt);
+
+      // Call confirm payment after the transaction is mined
+      const confirmTx = await paymentGateway.confirmPayment(createReceipt.transactionHash);
+      const confirmReceipt = await confirmTx.wait(); // Wait for confirmation
+
+      console.log("Payment confirmed:", confirmReceipt);
+
+      // Mint NFT receipt
+      const mintTx = await paymentReceipt.mintReceipt(
+        recipient,
+        amountInWei,
+        token
+      );
+      await mintTx.wait();
+
+      setReceipt(createReceipt.transactionHash); // Store the transaction hash as the receipt ID
+      setStep(3); // Move to the success step
+    } catch (error) {
+      console.error("Payment failed:", error);
+    }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen">
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Payment</CardTitle>
+          <CardTitle>Payment</CardTitle>
           <CardDescription>
             Send crypto and receive an NFT receipt
           </CardDescription>
-          {wallet && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              <p className="font-semibold pb-2">Wallet Address: {wallet}</p>
-              <p className="font-semibold">Balance: {balance} ETH</p>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           {step === 1 && (
@@ -131,7 +189,9 @@ export default function Payment() {
                 Amount: {amount} {token}
               </p>
               <p>Estimated Fee: {fee} ETH</p>
-              <Button className="w-full">Pay Now</Button>
+              <Button onClick={handlePayment} className="w-full">
+                Pay Now
+              </Button>
             </div>
           )}
 
@@ -139,15 +199,18 @@ export default function Payment() {
             <div className="space-y-4 text-center">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
               <h3 className="text-lg font-semibold">Payment Successful!</h3>
-              <p>NFT Receipt ID: </p>
-              <p>Transaction Hash:</p>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                View on Etherscan
-              </a>
+              <p>NFT Receipt ID: {receipt}</p>
+              <p>
+                Transaction Hash:
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${receipt}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  View on Etherscan
+                </a>
+              </p>
             </div>
           )}
         </CardContent>
@@ -157,7 +220,7 @@ export default function Payment() {
               Back
             </Button>
           )}
-          {/* {step === 3 && (
+          {step === 3 && (
             <Button
               onClick={() => {
                 setStep(1);
@@ -166,34 +229,6 @@ export default function Payment() {
               className="w-full"
             >
               Make Another Payment
-            </Button>
-          )} */}
-
-          {step === 2 && (
-            <Button
-              className="w-full"
-              onClick={() => {
-                const newTransaction = {
-                  recipient,
-                  amount,
-                  token,
-                  date: new Date().toLocaleString(),
-                };
-
-                // Save to localStorage
-                const existingTransactions = JSON.parse(
-                  localStorage.getItem("transactions") || "[]"
-                );
-                existingTransactions.push(newTransaction);
-                localStorage.setItem(
-                  "transactions",
-                  JSON.stringify(existingTransactions)
-                );
-
-                setStep(3); // Move to success step
-              }}
-            >
-              Pay Now
             </Button>
           )}
         </CardFooter>

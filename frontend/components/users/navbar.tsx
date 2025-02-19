@@ -24,6 +24,9 @@ export default function Navbar() {
           <Link href="/dashboard/swap" className="font-semibold hover:text-blue-700">
             Swap
           </Link>
+          <Link href="/dashboard/rough" className="font-semibold hover:text-blue-700">
+            Rough
+          </Link>
         </div>
         <div className="flex items-center gap-2">
             <ThemeToggle />
