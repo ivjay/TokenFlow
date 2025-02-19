@@ -1,46 +1,21 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Web3Provider } from "@ethersproject/providers";
-import { ethers } from "ethers";
-import { Wallet, CreditCard, ShoppingBag, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useContext, useEffect } from "react";
+import { WalletContext } from "@/context/WalletProvider";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Wallet, CreditCard, ShoppingBag, ArrowRight, Link } from "lucide-react";
 
 export default function LandingPage() {
-  const [connected, setConnected] = useState(false);
-  const [error, setError] = useState<string | boolean>(false);
+  const { connected, connectWallet } = useContext(WalletContext);
   const router = useRouter();
 
-  const handleConnect = async () => {
-    if (!window.ethereum) {
-      setError("MetaMask is not installed.");
-      return;
+  useEffect(() => {
+    if (connected) {
+      router.push("/dashboard");
     }
-
-    try {
-      const provider = new Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const account = await signer.getAddress();
-
-      if (account) {
-        setConnected(true);
-        localStorage.setItem("walletConnected", "true");
-        router.push("/dashboard");
-      }
-    } catch (err) {
-      setError("Connection failed. Please try again.");
-    }
-  };
+  }, [connected, router]);
 
   return (
     <div className="w-full">
@@ -67,7 +42,7 @@ export default function LandingPage() {
           <div className="space-x-4">
             <button
               // variant="outline"
-              onClick={handleConnect}
+              onClick={connectWallet}
               className="px-6 py-3 text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 z-10"
             >
               {connected ? "Connected" : "Connect Wallet"}
@@ -197,3 +172,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+

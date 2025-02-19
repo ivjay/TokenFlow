@@ -71,6 +71,7 @@ contract PaymentGateway is ReentrancyGuard {
     function createPayment(address payee, uint256 amount, string memory ipfsURI) external nonReentrant {
         require(amount > 0, "Amount must be > 0");
         require(paymentToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        require(paymentToken.allowance(msg.sender, address(this)) >= amount, "Insufficient allowance");
 
         bytes32 paymentId = keccak256(abi.encodePacked(msg.sender, payee, block.timestamp, ipfsURI));
         payments[paymentId] = Payment(msg.sender, payee, amount, false);
