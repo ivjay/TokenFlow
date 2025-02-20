@@ -1,15 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import contractAddresses from "@/contracts/contract-address.json";
+import PaymentGatewayABI from "@/contracts/PaymentGateway.json";
 
-// Example Chainlink Price Feeds (Replace with actual addresses)
+// Contract Address and ABI (replace with your contract's actual address and ABI)
+const PAYMENT_GATEWAY_ADDRESS = contractAddresses.PaymentGateway;
+
+
+// Chainlink Price Feeds
 const TOKEN_FEEDS = {
-  ETH: '0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419',
-  BTC: '0xf4030086522a5beea4988f8ca5b36dbc97bee88c',
+  ETH: '0x694AA1769357215DE4FAC081bf1f309aDC325306', 
+  BTC: '0x5fb1616F78dA7aFC9FF79e0371741a747D2a7F22', 
 };
 
 type Token = keyof typeof TOKEN_FEEDS;
@@ -20,31 +26,61 @@ export default function PriceConverter() {
   const [toToken, setToToken] = useState<Token>('BTC');
   const [convertedAmount, setConvertedAmount] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [latestPrice, setLatestPrice] = useState<string | null>(null);
+
+  // Initialize Ethers.js provider and contract instance
+  const provider = new ethers.JsonRpcProvider(process.env.ALCHEMY_RPC_URL);
+  const contract = new ethers.Contract(PAYMENT_GATEWAY_ADDRESS, PaymentGatewayABI.abi, provider);
+  
 
   async function fetchPrice(priceFeed: string | ethers.Addressable) {
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_INFURA_RPC);
-    const aggregator = new ethers.Contract(
-      priceFeed,
-      ['function latestRoundData() view returns (uint80, int256, uint256, uint256, uint80)'],
-      provider
-    );
-    const [, price] = await aggregator.latestRoundData();
-    return Number(price) / 1e8; // Chainlink prices have 8 decimals
+    try {
+      const price = await contract.getLatestPrice(priceFeed);
+      return Number(price) / 1e8; // Assuming the price has 8 decimals (Chainlink standard)
+    } catch (error) {
+        console.log(priceFeed)
+        console.error('Error fetching price from contract:', error);
+      return 0;
+    }
   }
 
   async function handleConvert() {
     setLoading(true);
     try {
-      const price1 = await fetchPrice(TOKEN_FEEDS[fromToken]);
-      const price2 = await fetchPrice(TOKEN_FEEDS[toToken]);
-      const converted = (parseFloat(amount) * price1) / price2;
-      setConvertedAmount(converted.toFixed(6));
+      if (!amount || isNaN(parseFloat(amount))) {
+        setConvertedAmount('Invalid amount');
+        setLoading(false);
+        return;
+      }
+
+      const token1Feed = TOKEN_FEEDS[fromToken];
+      const token2Feed = TOKEN_FEEDS[toToken];
+      console.log("token1",token1Feed)
+      
+      // Call the contract to convert the amount
+      const result = await contract.convertTokenAmount(
+        ethers.parseUnits(amount, 18), // Convert amount to 18 decimals
+        token1Feed,
+        token2Feed
+      );
+
+      setConvertedAmount(ethers.formatUnits(result, 18)); // Assuming 18 decimals for result
     } catch (error) {
-      console.error('Error fetching prices:', error);
+      console.error('Error converting amount:', error);
       setConvertedAmount('Error');
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    async function updatePrice() {
+      const price = await fetchPrice(TOKEN_FEEDS[fromToken]);
+      setLatestPrice(price.toString());
+      console.log("price",price)
+    }
+    
+    updatePrice();
+  }, [fromToken]);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -68,6 +104,14 @@ export default function PriceConverter() {
               <option key={token} value={token}>{token}</option>
             ))}
           </select>
+          
+          {/* Show the latest price of the selected token */}
+          {latestPrice && (
+            <div className="text-center text-lg font-semibold mt-2">
+              Latest Price of {fromToken}: {latestPrice} USD
+            </div>
+          )}
+          
           <span className="block text-center text-xl">⬇️</span>
           <select
             className="w-full p-2 border rounded-lg"
