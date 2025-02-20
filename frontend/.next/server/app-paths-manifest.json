@@ -2,6 +2,10 @@
   "/page": "app/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/swapTokens/page": "app/dashboard/swapTokens/page.js",
+  "/dashboard/buyToken/page": "app/dashboard/buyToken/page.js",
+  "/dashboard/exchangeRate/page": "app/dashboard/exchangeRate/page.js",
   "/dashboard/payments/page": "app/dashboard/payments/page.js",
-  "/dashboard/swap/page": "app/dashboard/swap/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/transaction/page": "app/dashboard/transaction/page.js"
 }

@@ -4,8 +4,16 @@ import Link from "next/link";
 import React from "react";
 import { Button } from "../ui/button";
 import ThemeToggle from "./theme";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter()
+
+  const handleOnClicKBuyToken = () => {
+    // Navigate to the BuyToken page
+    router.push('/dashboard/buyToken');
+  };
+  
   return (
     <nav className="shadow-md">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -24,16 +32,13 @@ export default function Navbar() {
           <Link href="/dashboard/exchangeRate" className=" font-semibold hover:text-blue-700">
             ExchangeRate
           </Link>
-          <Link href="/dashboard/swap" className="font-semibold hover:text-blue-700">
+          <Link href="/dashboard/swapTokens" className="font-semibold hover:text-blue-700">
             Swap
-          </Link>
-          <Link href="/dashboard/rough" className="font-semibold hover:text-blue-700">
-            Rough
           </Link>
         </div>
         <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" className="font-semibold">Connect</Button>
+            <Button variant="outline" className="font-semibold" onClick={handleOnClicKBuyToken}>BuyToken</Button>
         </div>
       </div>
     </nav>
